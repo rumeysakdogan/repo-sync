@@ -30,16 +30,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
-      - name: Install Azure CLI
-        run: |
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+      # - name: Install Azure CLI
+      #   run: |
+      #     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-      - name: Install Azure DevOps extension
-        uses: azure/cli@v1
-        with:
-          inlineScript: |
-            az extension add --name azure-devops
-            az extension list
+      # - name: Install Azure DevOps extension
+      #   uses: azure/cli@v1
+      #   with:
+      #     inlineScript: |
+      #       az extension add --name azure-devops
+      #       az extension list
 
       - name: Install dependencies
         run: |
@@ -49,7 +49,7 @@ jobs:
       - name: Run Python script
         shell: bash
         run: |
-          echo "${{ env.ADO_PERSONAL_ACCESS_TOKEN}}" | az devops login --organization ${{ env.USER_ORG }}
+          echo "${{ env.ADO_PERSONAL_ACCESS_TOKEN}}" | az devops login --organization https://dev.azure.com/"${{ env.USER_ORG }}"/
           python3 may24-sync-repo.py
         env:
           ADO_PERSONAL_ACCESS_TOKEN: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
