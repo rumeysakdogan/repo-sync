@@ -1,0 +1,58 @@
+name: Clone and sync repos to ADO
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  clone-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: info 
+        shell: bash
+        run: |
+          set -x 
+          git --version
+          git lfs --version
+          python3 --version
+          pip3 --version
+          az version 
+          git config --global user.name "${{ env.GIT_USER }}"
+          git config --global user.email "${{ env.GIT_EMAIL }}"
+          git config --global url.https://"${{ env.GIT_USER }}":"${{ env.GH_TOKEN }}"@github.com/"${{ env.GIT_USER }}"/.insteadOf https://github.com/"${{ env.GIT_USER }}"/
+         env:
+           GIT_USER: ${{ secrets.GIT_USERNAME }}
+           GIT_EMAIL: ${{ secrets.GIT_EMAIL }}
+           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+      - name: Install Azure DevOps extension
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            az extension add --name azure-devops
+            az extension list
+
+      - name: Install dependencies
+        run: |
+          # pip3 install pyOpenSSL --upgrade
+          pip3 install PyGithub GitPython
+
+      - name: Run Python script
+        shell: bash
+        run: |
+          echo "${{ env.ADO_PERSONAL_ACCESS_TOKEN}}" | az devops login --organization ${{ env.USER_ORG }}
+          python3 may24-sync-repo.py
+        env:
+          ADO_PERSONAL_ACCESS_TOKEN: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          USER_ORG: ${{ secrets.USER_ORG }}
