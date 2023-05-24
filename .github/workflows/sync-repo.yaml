@@ -9,7 +9,6 @@ on:
 jobs:
   clone-and-push:
     runs-on: ubuntu-latest
-
     steps:
       - name: info 
         shell: bash
