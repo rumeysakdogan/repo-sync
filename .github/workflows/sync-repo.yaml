@@ -22,7 +22,7 @@ jobs:
           git config --global user.name "${{ env.GIT_USER }}"
           git config --global user.email "${{ env.GIT_EMAIL }}"
           git config --global url.https://"${{ env.GIT_USER }}":"${{ env.GH_TOKEN }}"@github.com/"${{ env.GIT_USER }}"/.insteadOf https://github.com/"${{ env.GIT_USER }}"/
-         env:
+        env:
            GIT_USER: ${{ secrets.GIT_USERNAME }}
            GIT_EMAIL: ${{ secrets.GIT_EMAIL }}
            GH_TOKEN: ${{ secrets.GH_TOKEN }}
