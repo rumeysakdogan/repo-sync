@@ -48,6 +48,7 @@ jobs:
       - name: Run Python script
         shell: bash
         run: |
+          echo "${{ env.ADO_PERSONAL_ACCESS_TOKEN}}" | az devops login --organization https://dev.azure.com/"${{ env.USER_ORG }}"
           python3 may25-sync-repo.py
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
