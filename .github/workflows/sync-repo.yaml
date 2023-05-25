@@ -13,12 +13,11 @@ jobs:
       - name: info 
         shell: bash
         run: |
-          set -x 
+          set -x
           git --version
           git lfs --version
           python3 --version
           pip3 --version
-          pip show requests
           az version 
           git config --global user.name "${{ env.GIT_USER }}"
           git config --global user.email "${{ env.GIT_EMAIL }}"
@@ -44,13 +43,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # pip3 install pyOpenSSL --upgrade
           pip3 install PyGithub GitPython
 
       - name: Run Python script
         shell: bash
         run: |
-          # echo "${{ env.ADO_PERSONAL_ACCESS_TOKEN}}" | az devops login --organization https://dev.azure.com/"${{ env.USER_ORG }}"/
           python3 may24-sync-repo.py
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}

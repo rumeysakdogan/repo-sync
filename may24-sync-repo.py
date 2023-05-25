@@ -46,7 +46,7 @@ def get_default_branch(repo_name: str) -> str:
 
 
 def clone_and_push(repo_name: str) -> None:
-    
+    logging.info(f'Cloning repo: {repo_name} started.')
     default_branch = get_default_branch(repo_name)
 
     # Clone only the latest version of the default branch from Github
@@ -84,9 +84,10 @@ def clone_and_push(repo_name: str) -> None:
 
     # Clean up
     os.system(f'rm -rf {repo_path}')
-
+    logging.info(f'Cloning repo: {repo_name} complete.')
 
 def synchronize_and_push(repo_name: str) -> None:
+    logging.info(f'Synchronization of repo: {repo_name} started.')
     default_branch = get_default_branch(repo_name)
 
     # Set up source and destination repository URLs
@@ -122,7 +123,7 @@ def synchronize_and_push(repo_name: str) -> None:
 
     # Clean up
     shutil.rmtree(tmp_repo_path)
-
+    logging.info(f'Synchronization of repo: {repo_name} complete.')
 
 def main():
 
@@ -135,7 +136,7 @@ def main():
     source_repos = [
         repo
         for repo in source_repos
-        if not repo.name.startswith(RESTRICTED_PREFIX) and repo.name.startswith("gh")
+        if not repo.name.startswith(RESTRICTED_PREFIX) and repo.name.startswith("ter")
     ]
     logging.info(f'{len(source_repos)} repositories found in GitHub.')
 
