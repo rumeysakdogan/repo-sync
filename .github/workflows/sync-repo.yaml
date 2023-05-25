@@ -48,7 +48,7 @@ jobs:
       - name: Run Python script
         shell: bash
         run: |
-          python3 may25-sync-repo2.py
+          python3 may25-sync-repo.py
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
           ADO_PERSONAL_ACCESS_TOKEN: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
