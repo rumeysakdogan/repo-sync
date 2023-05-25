@@ -136,7 +136,7 @@ def main():
     source_repos = [
         repo
         for repo in source_repos
-        if not repo.name.startswith(RESTRICTED_PREFIX) and repo.name.startswith("ter")
+        if not repo.name.startswith(RESTRICTED_PREFIX) and repo.name.startswith("gh")
     ]
     logging.info(f'{len(source_repos)} repositories found in GitHub.')
 
