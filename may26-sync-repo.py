@@ -41,10 +41,7 @@ def list_ado_repositories(org_name: str, project_name: str) -> list:
 def get_default_branch(repo_name: str) -> str:
     g = Github(PERSONAL_ACCESS_TOKEN)
     repo = g.get_repo(f"{SOURCE_USER}/{repo_name}")
-    default_branch = repo.default_branch
-    if default_branch is None:
-        return ''
-    return default_branch
+    return repo.default_branch
 
 
 def clone_and_push(repo_name: str) -> tuple:
@@ -54,47 +51,48 @@ def clone_and_push(repo_name: str) -> tuple:
         if not default_branch:
             logging.info(f'Skipping empty repo: {repo_name}')
             return (repo_name, None)
-        # Clone only the latest version of the default branch from Github
-        clone_url = f'{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git'
-        repo_path = f'{LOCAL_PATH}/tempdir/{repo_name}'
-
-        # Check if repo_path already exists and is not empty
-        if os.path.exists(repo_path) and os.listdir(repo_path):
-            # Delete the existing directory and its contents
-            shutil.rmtree(repo_path)
-
-        repo = Repo.clone_from(clone_url, repo_path,
-                            branch=default_branch, depth=1)
-
-        # Remove history and initialize new repo
-        shutil.rmtree(os.path.join(repo_path, ".git"))
-        Repo.init(repo_path)
-
-        # Make an initial commit
-        repo.index.add("*")
-
-        hidden_files = [file for file in repo.untracked_files if file.startswith('.')]
-        if hidden_files:
-            repo.index.add(hidden_files)
         else:
-            print("No hidden files found")
-        repo.index.commit("Initial commit")
+            # Clone only the latest version of the default branch from Github
+            clone_url = f'{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git'
+            repo_path = f'{LOCAL_PATH}/tempdir/{repo_name}'
 
-        # Push to destination
-        remote_name = 'destination'
-        remote_url = f'{DESTINATION_URL}/{DESTINATION_ORG}/{DESTINATION_PROJECT}/_git/{repo_name}'
-        remote_url_with_token = remote_url.replace(
-            'https://', f'https://{DESTINATION_PERSONAL_ACCESS_TOKEN}@')
+            # Check if repo_path already exists and is not empty
+            if os.path.exists(repo_path) and os.listdir(repo_path):
+                # Delete the existing directory and its contents
+                shutil.rmtree(repo_path)
 
-        repo.create_remote(remote_name, url=remote_url_with_token)
+            repo = Repo.clone_from(clone_url, repo_path,
+                                branch=default_branch, depth=1)
 
-        #repo.create_remote(remote_name, url=remote_url_with_token)
-        repo.git.push(remote_name, f'HEAD:refs/heads/{default_branch}', force=True)
+            # Remove history and initialize new repo
+            shutil.rmtree(os.path.join(repo_path, ".git"))
+            Repo.init(repo_path)
 
-        # Clean up
-        shutil.rmtree(repo_path)
-        logging.info(f'Cloning repo: {repo_name} complete.')
-        return (repo_name, None)
+            # Make an initial commit
+            repo.index.add("*")
+
+            hidden_files = [file for file in repo.untracked_files if file.startswith('.')]
+            if hidden_files:
+                repo.index.add(hidden_files)
+            else:
+                print("No hidden files found")
+            repo.index.commit("Initial commit")
+
+            # Push to destination
+            remote_name = 'destination'
+            remote_url = f'{DESTINATION_URL}/{DESTINATION_ORG}/{DESTINATION_PROJECT}/_git/{repo_name}'
+            remote_url_with_token = remote_url.replace(
+                'https://', f'https://{DESTINATION_PERSONAL_ACCESS_TOKEN}@')
+
+            repo.create_remote(remote_name, url=remote_url_with_token)
+
+            #repo.create_remote(remote_name, url=remote_url_with_token)
+            repo.git.push(remote_name, f'HEAD:refs/heads/{default_branch}', force=True)
+
+            # Clean up
+            shutil.rmtree(repo_path)
+            logging.info(f'Cloning repo: {repo_name} complete.')
+            return (repo_name, None)
     except Exception as e:
         logging.error(f'Error cloning repo: {repo_name}. Exception: {e}')
         return (repo_name, e)
