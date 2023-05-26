@@ -173,7 +173,7 @@ def main():
     source_repos = g.get_user().get_repos()
     source_repos = [
         repo for repo in source_repos if not repo.name.startswith(RESTRICTED_PREFIX)
-        and repo.name.startswith("t")
+        and repo.name.startswith("skill")
     ]
     logging.info(f"{len(source_repos)} repositories found in GitHub.")
 
