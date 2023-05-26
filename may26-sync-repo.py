@@ -27,32 +27,6 @@ def create_ado_repository(org_name: str, project_name: str, repo_name: str, defa
            f'https://dev.azure.com/{org_name}', '--project', project_name, '--name', repo_name, '--output','table']
     subprocess.run(cmd, check=True)
 
-    # Set the default branch
-    policy_configuration = {
-        "isEnabled": False,
-        "isBlocking": False,
-        "type": {
-            "id": "fa4e907d-c16b-4a4c-9dfa-4906e5d171dd"
-        },
-        "settings": {
-            "minimumApproverCount": 0,
-            "creatorVoteCounts": False,
-            "allowDownvotes": False,
-            "resetOnSourcePush": False,
-            "scope": [
-                {
-                    "repositoryId": None,
-                    "refName": f"refs/heads/{default_branch}",
-                    "matchKind": "Exact"
-                }
-            ]
-        }
-    }
-    cmd = ['az', 'repos', 'policy', 'create', '--policy-configuration', json.dumps(policy_configuration),'--org',
-           f'https://dev.azure.com/{org_name}', '--project', project_name, '--repo-name', repo_name,
-           '--branch', default_branch]
-    subprocess.run(cmd, check=True)
-
 
 def list_ado_repositories(org_name: str, project_name: str) -> list:
     destination_repos = []
@@ -67,13 +41,19 @@ def list_ado_repositories(org_name: str, project_name: str) -> list:
 def get_default_branch(repo_name: str) -> str:
     g = Github(PERSONAL_ACCESS_TOKEN)
     repo = g.get_repo(f"{SOURCE_USER}/{repo_name}")
-    return repo.default_branch
+    default_branch = repo.default_branch
+    if default_branch is None:
+        return ''
+    return default_branch
 
 
-def clone_and_push(repo_name: str, default_branch: str) -> tuple:
+def clone_and_push(repo_name: str) -> tuple:
     try:
         logging.info(f'Cloning repo: {repo_name} started.')
-
+        default_branch = get_default_branch(repo_name)
+        if not default_branch:
+            logging.info(f'Skipping empty repo: {repo_name}')
+            return (repo_name, None)
         # Clone only the latest version of the default branch from Github
         clone_url = f'{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git'
         repo_path = f'{LOCAL_PATH}/tempdir/{repo_name}'
@@ -87,9 +67,8 @@ def clone_and_push(repo_name: str, default_branch: str) -> tuple:
                             branch=default_branch, depth=1)
 
         # Remove history and initi
-        #os.system(f'cd {repo_path} && rm -rf .git && git init')
-        subprocess.run(['rm', '-rf', os.path.join(repo_path, '.git')], check=True)
-        subprocess.run(['git', 'init'], cwd=repo_path, check=True)
+        shutil.rmtree(os.path.join(repo_path, ".git"))
+        Repo.init(repo_path)
 
         # Make an initial commit
         repo.index.add("*")
@@ -106,30 +85,25 @@ def clone_and_push(repo_name: str, default_branch: str) -> tuple:
         remote_url = f'{DESTINATION_URL}/{DESTINATION_ORG}/{DESTINATION_PROJECT}/_git/{repo_name}'
         remote_url_with_token = remote_url.replace(
             'https://', f'https://{DESTINATION_PERSONAL_ACCESS_TOKEN}@')
-<<<<<<< HEAD
-        repo.create_remote(remote_name, url=remote_url_with_token)
-=======
-        #repo.create_remote(remote_name, url=remote_url_with_token)
-        #repo.git.push(remote_name, f'HEAD:refs/heads/{default_branch}', force=True)
-        # Add the remote
-        subprocess.run(['git', 'remote', 'add', remote_name, remote_url_with_token], cwd=repo_path, check=True)
->>>>>>> parent of 0995881 (try push with gitpython)
 
-        # Push to the remote
-        subprocess.run(['git', 'push', '--set-upstream', 'destination', default_branch, '--force'], cwd=repo_path, check=True)
+        repo.create_remote(remote_name, url=remote_url_with_token)
+
+        #repo.create_remote(remote_name, url=remote_url_with_token)
+        repo.git.push(remote_name, f'HEAD:refs/heads/{default_branch}', force=True)
 
         # Clean up
-        subprocess.run(['rm', '-rf', repo_path], check=True)
+        shutil.rmtree(repo_path)
         logging.info(f'Cloning repo: {repo_name} complete.')
         return (repo_name, None)
     except Exception as e:
+        logging.error(f'Error cloning repo: {repo_name}. Exception: {e}')
         return (repo_name, e)
 
 
-def synchronize_and_push(repo_name: str, default_branch: str) -> tuple:
+def synchronize_and_push(repo_name: str) -> tuple:
     try:
         logging.info(f'Synchronization of repo: {repo_name} started.')
-
+        default_branch = get_default_branch(repo_name)
         # Set up source and destination repository URLs
         source_clone_url = f"{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git"
         destination_clone_url = (
@@ -196,8 +170,7 @@ def main():
     with ThreadPoolExecutor() as executor:
         futures = [
             executor.submit(
-                create_ado_repository, DESTINATION_ORG, DESTINATION_PROJECT, repo.name, get_default_branch(repo.name)
-            )
+                create_ado_repository, DESTINATION_ORG, DESTINATION_PROJECT, repo.name)
             for repo in new_repos
         ]
         futures += [executor.submit(clone_and_push, repo.name) for repo in new_repos]
@@ -217,7 +190,7 @@ def main():
 
     with ThreadPoolExecutor() as executor:
         futures = [
-            executor.submit(synchronize_and_push, repo.name, get_default_branch(repo.name)) for repo in existing_repos
+            executor.submit(synchronize_and_push, repo.name) for repo in existing_repos
         ]
         for future in futures:
             result = future.result()
