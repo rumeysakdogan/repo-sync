@@ -21,7 +21,7 @@ LOCAL_PATH = os.environ['RUNNER_TEMP']
 
 logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
 
-def create_ado_repository(org_name: str, project_name: str, repo_name: str, default_branch: str) -> None:
+def create_ado_repository(org_name: str, project_name: str, repo_name: str) -> None:
     # Create the repository
     cmd = ['az', 'repos', 'create', '--org',
            f'https://dev.azure.com/{org_name}', '--project', project_name, '--name', repo_name, '--output','table']
@@ -66,7 +66,7 @@ def clone_and_push(repo_name: str) -> tuple:
         repo = Repo.clone_from(clone_url, repo_path,
                             branch=default_branch, depth=1)
 
-        # Remove history and initi
+        # Remove history and initialize new repo
         shutil.rmtree(os.path.join(repo_path, ".git"))
         Repo.init(repo_path)
 
