@@ -86,7 +86,7 @@ def clone_and_push(repo_name: str) -> tuple:
         subprocess.run(['git', 'remote', 'add', remote_name, remote_url_with_token], cwd=repo_path, check=True)
 
         # Push to the remote
-        subprocess.run(['git', 'push', '--set-upstream', 'destination', f'HEAD:refs/heads/{default_branch}', '--force'], cwd=repo_path, check=True)
+        subprocess.run(['git', 'push', '--set-upstream', 'destination', default_branch, '--force'], cwd=repo_path, check=True)
 
         # Clean up
         subprocess.run(['rm', '-rf', repo_path], check=True)
