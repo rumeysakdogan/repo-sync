@@ -21,11 +21,19 @@ LOCAL_PATH = os.environ['RUNNER_TEMP']
 
 logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
 
-def create_ado_repository(org_name: str, project_name: str, repo_name: str) -> None:
+def create_ado_repository(org_name: str, project_name: str, repo_name: str, default_branch: str) -> None:
+    # Create the repository
     cmd = ['az', 'repos', 'create', '--org',
            f'https://dev.azure.com/{org_name}', '--project', project_name, '--name', repo_name, '--output','table']
     subprocess.run(cmd, check=True)
 
+    # Set the default branch
+    cmd = ['az', 'repos', 'policy', 'create', '--org',
+           f'https://dev.azure.com/{org_name}', '--project', project_name, '--repo-name', repo_name,
+           '--branch', default_branch, '--type', 'MinimumNumberOfReviewersPolicy', '--is-blocking', 'false',
+           '--is-enabled', 'false']
+    subprocess.run(cmd, check=True)
+# the command is being used to set the default branch of a repository by creating a non-blocking, non-enabled MinimumNumberOfReviewersPolicy for the specified branch. This is a workaround because there is currently no direct way to set the default branch of a repository using the Azure CLI.
 
 def list_ado_repositories(org_name: str, project_name: str) -> list:
     destination_repos = []
@@ -43,10 +51,9 @@ def get_default_branch(repo_name: str) -> str:
     return repo.default_branch
 
 
-def clone_and_push(repo_name: str) -> tuple:
+def clone_and_push(repo_name: str, default_branch: str) -> tuple:
     try:
         logging.info(f'Cloning repo: {repo_name} started.')
-        default_branch = get_default_branch(repo_name)
 
         # Clone only the latest version of the default branch from Github
         clone_url = f'{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git'
@@ -80,10 +87,7 @@ def clone_and_push(repo_name: str) -> tuple:
         remote_url = f'{DESTINATION_URL}/{DESTINATION_ORG}/{DESTINATION_PROJECT}/_git/{repo_name}'
         remote_url_with_token = remote_url.replace(
             'https://', f'https://{DESTINATION_PERSONAL_ACCESS_TOKEN}@')
-        #repo.create_remote(remote_name, url=remote_url_with_token)
-        
-        # Add the remote
-        subprocess.run(['git', 'remote', 'add', remote_name, remote_url_with_token], cwd=repo_path, check=True)
+        repo.create_remote(remote_name, url=remote_url_with_token)
 
         # Push to the remote
         #subprocess.run(['git', 'push', '--set-upstream', 'destination', f'HEAD:refs/heads/{default_branch}', '--force'], cwd=repo_path, check=True)
@@ -97,10 +101,9 @@ def clone_and_push(repo_name: str) -> tuple:
         return (repo_name, e)
 
 
-def synchronize_and_push(repo_name: str) -> tuple:
+def synchronize_and_push(repo_name: str, default_branch: str) -> tuple:
     try:
         logging.info(f'Synchronization of repo: {repo_name} started.')
-        default_branch = get_default_branch(repo_name)
 
         # Set up source and destination repository URLs
         source_clone_url = f"{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git"
@@ -168,7 +171,7 @@ def main():
     with ThreadPoolExecutor() as executor:
         futures = [
             executor.submit(
-                create_ado_repository, DESTINATION_ORG, DESTINATION_PROJECT, repo.name
+                create_ado_repository, DESTINATION_ORG, DESTINATION_PROJECT, repo.name, get_default_branch(repo.name)
             )
             for repo in new_repos
         ]
@@ -189,7 +192,7 @@ def main():
 
     with ThreadPoolExecutor() as executor:
         futures = [
-            executor.submit(synchronize_and_push, repo.name) for repo in existing_repos
+            executor.submit(synchronize_and_push, repo.name, get_default_branch(repo.name)) for repo in existing_repos
         ]
         for future in futures:
             result = future.result()
