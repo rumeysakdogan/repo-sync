@@ -28,12 +28,31 @@ def create_ado_repository(org_name: str, project_name: str, repo_name: str, defa
     subprocess.run(cmd, check=True)
 
     # Set the default branch
-    cmd = ['az', 'repos', 'policy', 'create', '--org',
+    policy_configuration = {
+        "isEnabled": False,
+        "isBlocking": False,
+        "type": {
+            "id": "fa4e907d-c16b-4a4c-9dfa-4906e5d171dd"
+        },
+        "settings": {
+            "minimumApproverCount": 0,
+            "creatorVoteCounts": False,
+            "allowDownvotes": False,
+            "resetOnSourcePush": False,
+            "scope": [
+                {
+                    "repositoryId": None,
+                    "refName": f"refs/heads/{default_branch}",
+                    "matchKind": "Exact"
+                }
+            ]
+        }
+    }
+    cmd = ['az', 'repos', 'policy', 'create', '--policy-configuration', json.dumps(policy_configuration),'--org',
            f'https://dev.azure.com/{org_name}', '--project', project_name, '--repo-name', repo_name,
-           '--branch', default_branch, '--type', 'MinimumNumberOfReviewersPolicy', '--is-blocking', 'false',
-           '--is-enabled', 'false']
+           '--branch', default_branch]
     subprocess.run(cmd, check=True)
-# the command is being used to set the default branch of a repository by creating a non-blocking, non-enabled MinimumNumberOfReviewersPolicy for the specified branch. This is a workaround because there is currently no direct way to set the default branch of a repository using the Azure CLI.
+
 
 def list_ado_repositories(org_name: str, project_name: str) -> list:
     destination_repos = []
