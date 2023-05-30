@@ -39,7 +39,7 @@ jobs:
         run: |
           set -x 
           echo $RUNNER_TEMP
-          python3 may30-sync-repo.py
+          python3 may30-sync-repo-without-thread.py
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
           ADO_PERSONAL_ACCESS_TOKEN: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
