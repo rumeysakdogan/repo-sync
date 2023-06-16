@@ -68,49 +68,55 @@ def clone_and_push(repo_name: str) -> tuple:
         logging.info(f"Cloning repo: {repo_name} started.")
         default_branch = get_default_branch(repo_name)
 
-        # Clone only the latest version of the default branch from Github
+        # Clone the repository with a depth of 1 and without checkout
         clone_url = f"{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git"
         repo_path = f"{LOCAL_PATH}/tempdir/{repo_name}"
 
-        # Check if repo_path already exists
-        if os.path.exists(repo_path):
+        # Check if repo_path already exists and is not empty
+        if os.path.exists(repo_path) and os.listdir(repo_path):
             # Delete the existing directory and its contents
             shutil.rmtree(repo_path)
 
-        # repo = Repo.clone_from(clone_url, repo_path, branch=default_branch, depth=1)
-        # logging.info(f"Repo cloned successfully")
-
         subprocess.run(
-            ["git", "clone", "--depth", "1", clone_url, repo_path],
+            ["git", "clone", "--no-checkout", "--depth", "1", clone_url, repo_path],
             check=True,
         )
-        repo = Repo(repo_path)
 
-        # Push to destination
+        # Change to the cloned repository directory
+        os.chdir(repo_path)
+
+        # Fetch the latest commit from the default branch
+        subprocess.run(
+            ["git", "fetch", "origin", default_branch],
+            check=True,
+        )
+
+        # Create a new branch for Azure DevOps
+        azure_devops_branch = "azure-devops-branch"
+        subprocess.run(
+            ["git", "checkout", "-b", azure_devops_branch],
+            check=True,
+        )
+
+        # Push the new branch to Azure DevOps
         remote_name = "destination"
-        # Replace period at beginning of repo_name with underscore
-        if repo_name.startswith("."):
-            repo_name = "_" + repo_name[1:]
         remote_url = f"{DESTINATION_URL}/{DESTINATION_ORG}/{DESTINATION_PROJECT}/_git/{repo_name}"
         remote_url_with_token = remote_url.replace(
             "https://", f"https://{DESTINATION_PERSONAL_ACCESS_TOKEN}@"
         )
-
-        repo.create_remote(remote_name, url=remote_url_with_token)
-
-        # Fetch latest commit from the default branch
-        repo.remotes.origin.fetch(f"refs/heads/{default_branch}")
-
-        # Set the local branch to the fetched commit
-        repo.create_head(default_branch, repo.remotes.origin.refs[default_branch])
-        repo.heads[default_branch].set_tracking_branch(
-            repo.remotes.origin.refs[default_branch]
+        subprocess.run(
+            [
+                "git",
+                "push",
+                "--force",
+                remote_name,
+                f"{azure_devops_branch}:refs/heads/{default_branch}",
+            ],
+            check=True,
         )
 
-        repo.git.push(
-            remote_name, f"{default_branch}:refs/heads/{default_branch}", force=True
-        )
         # Clean up
+        os.chdir("..")
         shutil.rmtree(repo_path)
         logging.info(f"Cloning repo: {repo_name} complete.")
         return (repo_name, None)
