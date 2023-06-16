@@ -39,7 +39,7 @@ jobs:
         run: |
           set -x 
           echo $RUNNER_TEMP
-          python3 may30-sync-repo-without-thread.py
+          python3 jun15-repo-sync-without-changing-latest-commit-msg-and-committer.py
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
           ADO_PERSONAL_ACCESS_TOKEN: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
