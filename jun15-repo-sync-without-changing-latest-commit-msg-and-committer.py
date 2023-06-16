@@ -98,29 +98,27 @@ def clone_and_push(repo_name: str) -> tuple:
             check=True,
         )
 
-        repo.create_remote(remote_name, url=remote_url_with_token)
-        logging.info(f"Azure DevOps remote added successfully")
-
-        # Push the new branch to Azure DevOps
+        # Add the Azure DevOps remote URL
         remote_name = "destination"
         remote_url = f"{DESTINATION_URL}/{DESTINATION_ORG}/{DESTINATION_PROJECT}/_git/{repo_name}"
         remote_url_with_token = remote_url.replace(
             "https://", f"https://{DESTINATION_PERSONAL_ACCESS_TOKEN}@"
         )
-
-        repo.create_remote(remote_name, url=remote_url_with_token)
-
-        # Fetch latest commit from the default branch
-        repo.remotes.origin.fetch(f"refs/heads/{default_branch}")
-
-        # Set the local branch to the fetched commit
-        repo.create_head(default_branch, repo.remotes.origin.refs[default_branch])
-        repo.heads[default_branch].set_tracking_branch(
-            repo.remotes.origin.refs[default_branch]
+        subprocess.run(
+            ["git", "remote", "add", remote_name, remote_url_with_token],
+            check=True,
         )
 
-        repo.git.push(
-            remote_name, f"{default_branch}:refs/heads/{default_branch}", force=True
+        # Push the new branch to Azure DevOps
+        subprocess.run(
+            [
+                "git",
+                "push",
+                "--force",
+                remote_name,
+                f"{azure_devops_branch}:refs/heads/{default_branch}",
+            ],
+            check=True,
         )
         # Clean up
         os.chdir("..")
