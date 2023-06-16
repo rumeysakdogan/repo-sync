@@ -108,22 +108,20 @@ def clone_and_push(repo_name: str) -> tuple:
             "https://", f"https://{DESTINATION_PERSONAL_ACCESS_TOKEN}@"
         )
 
-        subprocess.run(
-            ["git", "remote", "add", remote_name, remote_url_with_token],
-            check=True,
+        repo.create_remote(remote_name, url=remote_url_with_token)
+
+        # Fetch latest commit from the default branch
+        repo.remotes.origin.fetch(f"refs/heads/{default_branch}")
+
+        # Set the local branch to the fetched commit
+        repo.create_head(default_branch, repo.remotes.origin.refs[default_branch])
+        repo.heads[default_branch].set_tracking_branch(
+            repo.remotes.origin.refs[default_branch]
         )
 
-        subprocess.run(
-            [
-                "git",
-                "push",
-                "--force",
-                remote_name,
-                f"{azure_devops_branch}:refs/heads/{default_branch}",
-            ],
-            check=True,
+        repo.git.push(
+            remote_name, f"{default_branch}:refs/heads/{default_branch}", force=True
         )
-
         # Clean up
         os.chdir("..")
         shutil.rmtree(repo_path)
