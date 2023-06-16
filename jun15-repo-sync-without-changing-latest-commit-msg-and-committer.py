@@ -72,27 +72,19 @@ def clone_and_push(repo_name: str) -> tuple:
         clone_url = f"{SOURCE_URL}/{SOURCE_USER}/{repo_name}.git"
         repo_path = f"{LOCAL_PATH}/tempdir/{repo_name}"
 
-        # Check if repo_path already exists and is not empty
-        if os.path.exists(repo_path) and os.listdir(repo_path):
+        # Check if repo_path already exists
+        if os.path.exists(repo_path):
             # Delete the existing directory and its contents
             shutil.rmtree(repo_path)
 
-        repo = Repo.clone_from(clone_url, repo_path, branch=default_branch, depth=1)
-        logging.info(f"Repo cloned successfully")
+        # repo = Repo.clone_from(clone_url, repo_path, branch=default_branch, depth=1)
+        # logging.info(f"Repo cloned successfully")
 
-        # # Fetch all LFS objects
-        # repo.git.lfs("fetch", "--all")
-        # logging.info(f"All LFS objects fetched")
-
-        # Remove history and initialize new repo
-        # shutil.rmtree(os.path.join(repo_path, ".git"))
-        # Repo.init(repo_path)
-        # logging.info(f"History removed and new repo initialized")
-
-        # # Make an initial commit
-        # repo.git.add(A=True)
-        # repo.index.commit("Initial commit")
-        # logging.info(f"Update from GH")
+        subprocess.run(
+            ["git", "clone", "--no-checkout", "--depth", "1", clone_url, repo_path],
+            check=True,
+        )
+        repo = Repo(repo_path)
 
         # Push to destination
         remote_name = "destination"
@@ -105,9 +97,6 @@ def clone_and_push(repo_name: str) -> tuple:
         )
 
         repo.create_remote(remote_name, url=remote_url_with_token)
-        # # Enable LFS locking
-        # repo.git.config(f"lfs.{remote_url}/info/lfs.locksverify", "true")
-        # logging.info(f"LFS locking enabled")
         repo.git.push(remote_name, f"HEAD:refs/heads/{default_branch}", force=True)
         # Clean up
         shutil.rmtree(repo_path)
@@ -138,7 +127,7 @@ def main():
     source_repos = [
         repo
         for repo in source_repos
-        if not repo.name.startswith(RESTRICTED_PREFIX) and repo.name.startswith("gh-")
+        if not repo.name.startswith(RESTRICTED_PREFIX) and repo.name.startswith("pet")
     ]
     logging.info(f"{len(source_repos)} repositories found in GitHub.")
 
