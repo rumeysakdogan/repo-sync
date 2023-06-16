@@ -81,7 +81,7 @@ def clone_and_push(repo_name: str) -> tuple:
         # logging.info(f"Repo cloned successfully")
 
         subprocess.run(
-            ["git", "clone", "--no-checkout", "--depth", "1", clone_url, repo_path],
+            ["git", "clone", "--depth", "1", clone_url, repo_path],
             check=True,
         )
         repo = Repo(repo_path)
@@ -97,7 +97,19 @@ def clone_and_push(repo_name: str) -> tuple:
         )
 
         repo.create_remote(remote_name, url=remote_url_with_token)
-        repo.git.push(remote_name, f"HEAD:refs/heads/{default_branch}", force=True)
+
+        # Fetch latest commit from the default branch
+        repo.remotes.origin.fetch(f"refs/heads/{default_branch}")
+
+        # Set the local branch to the fetched commit
+        repo.create_head(default_branch, repo.remotes.origin.refs[default_branch])
+        repo.heads[default_branch].set_tracking_branch(
+            repo.remotes.origin.refs[default_branch]
+        )
+
+        repo.git.push(
+            remote_name, f"{default_branch}:refs/heads/{default_branch}", force=True
+        )
         # Clean up
         shutil.rmtree(repo_path)
         logging.info(f"Cloning repo: {repo_name} complete.")
