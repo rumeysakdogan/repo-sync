@@ -39,7 +39,7 @@ jobs:
         run: |
           set -x 
           echo $RUNNER_TEMP
-          python3 jun2-try-git-reset-for-sync.py
+          python3 may-26-sync-repo.py
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
           ADO_PERSONAL_ACCESS_TOKEN: ${{ secrets.ADO_PERSONAL_ACCESS_TOKEN }}
