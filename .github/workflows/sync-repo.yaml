@@ -46,6 +46,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           USER_ORG: ${{ secrets.USER_ORG }}
           GIT_TRACE: 1
-    - name: Print annotations
-      run: |
-        echo "Annotations: ${{ env.GITHUB_OUTPUT }}"
+      - name: Print annotations
+        run: |
+          echo "Annotations: ${{ env.GITHUB_OUTPUT }}"
