@@ -48,6 +48,7 @@ jobs:
           GIT_TRACE: 1
 
       - name: Set status
+        id: set_status
         run: |
           echo "status='Status of syn: 100 cloned, 2 failed, 0 empty'" >> $GITHUB_OUTPUT
       - name: Print status
