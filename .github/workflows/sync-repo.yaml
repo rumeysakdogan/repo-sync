@@ -47,6 +47,10 @@ jobs:
           USER_ORG: ${{ secrets.USER_ORG }}
           GIT_TRACE: 1
 
-      - name: Print annotations
+      - name: Set status
         run: |
-          echo "Status of syn: 100 cloned, 2 failed, 0 empty" >> $GITHUB_OUTPUT
+          echo "status='Status of syn: 100 cloned, 2 failed, 0 empty'" >> $GITHUB_OUTPUT
+      - name: Print status
+        run: |
+          echo "Status: ${{ steps.set_status.outputs.status }}"
+      
